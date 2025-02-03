@@ -15,6 +15,7 @@ urlpatterns = [
     path('find/<int:id>/' , get_one_blog , name = 'get_one'),
     path('like/<int:id>/plus/', like_blog, name='like_blog'),
     path('like/<int:id>/minus/', unlike_blog, name='unlike_blog'),
+    path('like/<int:id>/reset/', reset_likes, name='reset_likes'),
     path('edit/<int:id>/', edit_blog, name='edit_blog'),
     path('title/<str:title>/', get_one_blog_title, name='get_one_blog_title'),
     path('text/<str:input_text>/', get_similar_blogs, name='get_similar_blogs'),

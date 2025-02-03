@@ -47,69 +47,70 @@ def delete_blog(request , id):
         return Response({ 'user_no' : 403 , 'content' : 'invalid id'})
 
 
+
+
 @api_view(['POST'])
 def like_blog(request, id):
     try:
-
         blog_obj = Blog.objects.get(id=id)
-        
-        # Increment the likes count
-        blog_obj.likes += 1
-        blog_obj.save()
+
+        if not blog_obj.like_list.filter(id=request.user.id).exists():
+            blog_obj.like_list.add(request.user)
+            blog_obj.likes = blog_obj.like_list.count()
+            blog_obj.save()
 
         serializer = blogSerializer(blog_obj)
 
         return Response({
-            'user_no': 200,
+            'status': 200,
             'content': 'Blog liked successfully',
             'likes': blog_obj.likes,
             'blog': serializer.data
         })
     except Blog.DoesNotExist:
         return Response({
-            'user_no': 404,
+            'status': 404,
             'content': 'Blog not found'
         })
     except Exception as e:
-        print(e)
+        print(f"Error: {str(e)}")  # Print the error message for debugging
         return Response({
-            'user_no': 500,
-            'content': 'Something went wrong'
+            'status': 500,
+            'content': 'Something went wrong',
+            'error': str(e)  # Return the error message in the response
         })
+
     
+
+
 
 @api_view(['POST'])
 def unlike_blog(request, id):
     try:
         blog_obj = Blog.objects.get(id=id)
-        
-        # Decrement the likes count
-        if blog_obj.likes > 0:
-            blog_obj.likes -= 1
+
+        if blog_obj.like_list.filter(id=request.user.id).exists():
+            blog_obj.like_list.remove(request.user)
+            blog_obj.likes = blog_obj.like_list.count()  # Decrement the likes count
             blog_obj.save()
-        else:
-            return Response({
-                'user_no': 400,
-                'content': 'Cannot have negative likes'
-            })
 
         serializer = blogSerializer(blog_obj)
 
         return Response({
-            'user_no': 200,
+            'status': 200,
             'content': 'Blog unliked successfully',
             'likes': blog_obj.likes,
             'blog': serializer.data
         })
     except Blog.DoesNotExist:
         return Response({
-            'user_no': 404,
+            'status': 404,
             'content': 'Blog not found'
         })
     except Exception as e:
         print(e)
         return Response({
-            'user_no': 500,
+            'status': 500,
             'content': 'Something went wrong'
         })
 
@@ -221,5 +222,45 @@ def get_similar_blogs(request, input_text):
     except Exception as e:
         print(e)
         return Response({'user_no': 403, 'content': 'Invalid request'})
+
+
+@api_view(['POST'])
+def reset_likes(request, id):
+    try:
+        blog_obj = Blog.objects.get(id=id)
+
+        # Reset the like count and clear the like list
+        blog_obj.likes = 0
+        blog_obj.like_list.clear()  # Removes all users from the like list
+        blog_obj.save()
+
+        serializer = blogSerializer(blog_obj)
+
+        return Response({
+            'status': 200,
+            'content': 'Like count reset successfully',
+            'likes': blog_obj.likes,
+            'blog': serializer.data
+        })
+    except Blog.DoesNotExist:
+        return Response({
+            'status': 404,
+            'content': 'Blog not found'
+        })
+    except Exception as e:
+        print(f"Error: {str(e)}")  # Print the error message for debugging
+        return Response({
+            'status': 500,
+            'content': 'Something went wrong',
+            'error': str(e)  # Return the error message in the response
+        })
+    
+
+
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated  # Import IsAuthenticated permission
+
+
 
 
